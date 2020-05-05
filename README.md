@@ -8,7 +8,7 @@ This application accepts the following input arguments or environment variables:
 
 * `apiKey` - The Authorization token passed in the request header to the API.  This argument is required and without a default value.
 * `apiThrottleRate` - Rate at which to delay between requests in milliseconds.  Default = 500
-* `demo` - `true` or `false`.  Default = 'true'
+* `demo` - `true` or `false`.  When in demo mode, GET requests will be run against the API, and the data will be changed in memory with details output to the console, but no changes will be written back to the API. Default = 'true'
 * `demoTop` - In demo mode limit the objects requested to this amount.  Default = 1000
 * `hostPort` - Default = 80
 * `loggingLevel` - Allows values `1-3` with 3 being the highest logging. Default = 3
@@ -20,5 +20,3 @@ Since `apiKey`, and `url` are both required and have no default values, if launc
 ```cmd
 node app.js --url=https://api.domain.com/odata --apiKey=387dbb3c-6f37-48fa-aaa3-c14f23d33bd2
 ```
-
-To convert this application from a demo to production ready, remove the `$top` argument from the API GET requests in `app.js`, and uncomment the patch function calls in `replaceContacts.js`.

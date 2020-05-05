@@ -183,6 +183,51 @@ const patch = {
                 handleError(error);
             });
         }
+    },
+    vendors: (url, apiKey, apiThrottleRate, handleError, updatedVendors) => {
+        // Only use this function if the API does not support bulk PATCH
+        updatedVendors.forEach(updatedVendor => {
+            //Don't overrun throttling
+            setTimeout(() => {
+                axios.request({
+                    data: updatedVendor,            
+                    headers: {
+                        'Authorization': `basic ${apiKey}`
+                    },
+                    httpsAgent: new https.Agent({
+                        keepAlive: true,
+                        rejectUnauthorized: false // (NOTE: this will disable client verification)
+                    }),
+                    method: 'patch',
+                    url: url + `/financialVendors(${updatedVendor.id})`
+                }).catch(error => {
+                    // If error 429 then retry after a slight delay
+                    handleError(error);
+                });
+            }, apiThrottleRate);
+        });
+    },
+    vendorsBulk: (url, apiKey, handleError, updatedVendors) => {
+        // Bulk support must be implemented in the API
+        if(updatedVendors.length > 0) {
+            axios.request({
+                data: updatedVendors,            
+                headers: {
+                    'Authorization': `basic ${apiKey}`
+                },
+                httpsAgent: new https.Agent({
+                    keepAlive: true,
+                    rejectUnauthorized: false // (NOTE: this will disable client verification)
+                }),
+                method: 'patch',
+                url: url + '/financialVendors'
+            }).then(urlRes => {
+                console.log(`Bulk PATCH of vendors completed successfully`);
+            }).catch(error => {
+                // If error 429 then retry after a slight delay
+                handleError(error);
+            });
+        }
     }
 }
 

@@ -6,12 +6,32 @@ const faker = require('faker/locale/en_US');
 const https = require('https');
 const patch = require('./patch.js');
 
-const replaceContacts = (url, apiKey, apiThrottleRate, handleError, loggingLevel, demo, contactsQuery) => {
+// Contacts have firstName, lastName, displayName, addresses, emails, and phones that all need to be replaced
+const replaceContacts = (config) => {
+    const defaultConfig = {
+        apiKey: null, // Required but with no default
+        apiThrottleRate: 500, // Rate at which to delay between requests in milliseconds
+        query: null, // Not required
+        demo: "true", // "true" or "false"
+        demoTop: 100, // In demo mode limit the objects requested to this amount
+        handleError: null, // Callback function should an error occur.  Not required
+        loggingLevel: 3, //1-3 with 3 being most verbose logging
+        url: null // Required but with no default
+    }
+    config = { ...defaultConfig, ...config };
+    if (config.query == null) {
+        // We want to get the least amount of data back.  In this case all we need are the IDs to maintain referential integrity.
+        // We are changing the PII and those changes are not based on the original values, so we do not need to know them
+        config.query = config.url + '/contacts?$select=id&$expand=addressAssocs($select=addressId),emailAssocs($select=emailId),phoneAssocs($select=phoneId)';
+        if(config.demoTop != null) {
+            config.query += `&$top=${config.demoTop}`;
+        }
+    }
     // GET one or more contacts from EDH including all their addresses, emails, and phones
-    console.log(`Getting contacts`);
-    axios.get(contactsQuery, {
+    console.log(`GET = ${chalk.blueBright(config.query)}`)
+    axios.get(config.query, {
         headers: {
-            'Authorization': `basic ${apiKey}`
+            'Authorization': `basic ${config.apiKey}`
         },
         httpsAgent: new https.Agent({
             keepAlive: true,
@@ -34,7 +54,7 @@ const replaceContacts = (url, apiKey, apiThrottleRate, handleError, loggingLevel
                 displayName: `${lastName}, ${firstName}`
             }
             updatedContacts.push(updatedContact);
-            if(loggingLevel > 2) {
+            if(config.loggingLevel > 2) {
                 console.log(`Replacing contact(${chalk.redBright(updatedContact.id)}) with ${chalk.greenBright(`${updatedContact.firstName} ${updatedContact.lastName}`)}`);
             }
             // Loop through each address replacing it's PII properties with fake data
@@ -50,7 +70,7 @@ const replaceContacts = (url, apiKey, apiThrottleRate, handleError, loggingLevel
                     country: "USA"
                 }
                 updatedAddresses.push(updatedAddress);
-                if(loggingLevel > 2) {
+                if(config.loggingLevel > 2) {
                     console.log(`Replacing address(${chalk.redBright(updatedAddress.id)}) with ${chalk.greenBright(`${updatedAddress.address1} ${updatedAddress.city}, ${updatedAddress.stateProvince}. ${updatedAddress.postalCode}`)}`);
                 }
             });
@@ -61,7 +81,7 @@ const replaceContacts = (url, apiKey, apiThrottleRate, handleError, loggingLevel
                     emailAddress: faker.internet.email(updatedContact.firstName, updatedContact.lastName)
                 }
                 updatedEmails.push(updatedEmail);
-                if(loggingLevel > 2) {
+                if(config.loggingLevel > 2) {
                     console.log(`Replacing email(${chalk.redBright(updatedEmail.id)}) with ${chalk.greenBright(updatedEmail.emailAddress)}`);
                 }
             });
@@ -80,26 +100,27 @@ const replaceContacts = (url, apiKey, apiThrottleRate, handleError, loggingLevel
                     }
                 }
                 updatedPhones.push(updatedPhone);
-                if(loggingLevel > 2) {
+                if(config.loggingLevel > 2) {
                     console.log(`Replacing phone(${chalk.redBright(updatedPhone.id)}) with ${chalk.greenBright(updatedPhone.phoneNumber)}`);
                 }
             });
         });
         // Call patch and not patchBulk functions only when the API does not support bulk PATCH
-        if(demo == "false") {
-            patch.addresses(url, apiKey, apiThrottleRate, handleError, updatedAddresses);
-            patch.contacts(url, apiKey, apiThrottleRate, handleError, updatedContacts);
-            patch.emails(url, apiKey, apiThrottleRate, handleError, updatedEmails);
-            patch.phones(url, apiKey, apiThrottleRate, handleError, updatedPhones);
+        if(config.demo == "false") {
+            patch.addresses(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedAddresses);
+            patch.contacts(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedContacts);
+            patch.emails(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedEmails);
+            patch.phones(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedPhones);
         }
         // If there are more contacts, recurse down and get them
         if(urlRes.data['@odata.nextLink']) {
-            replaceContacts(url, apiKey, apiThrottleRate, handleError, urlRes.data['@odata.nextLink'], res);
+            config.query = urlRes.data['@odata.nextLink'];
+            replaceContacts(config);
         } else {
             console.log(`Contacts updated successfully`);
         }
     }).catch(error => {
-        handleError(error);
+        config.handleError(error);
     });
 }
 
