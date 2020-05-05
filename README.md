@@ -7,8 +7,12 @@ This service can run on Windows, Mac, or Linux and can easily be tailored to dif
 This application accepts the following input arguments or environment variables:
 
 * `apiKey` - The Authorization token passed in the request header to the API.  This argument is required and without a default value.
-* `loggingLevel` - Allows values 1-3 with 3 being the highest logging and also the default value
-* `method` - Allows values "http" or "immediate" (default).  "immediate" will execute once immediatly when the service is launched, then exit once complete.  "html" will launch an http listener and announce its IP and port.  Sending a GET request to this IP and port will trigger the cleanup to begin.  A response will be sent to the browser once complete, but detail logs will only be viewable from the service's console.
+* `apiThrottleRate` - Rate at which to delay between requests in milliseconds.  Default = 500
+* `demo` - `true` or `false`.  Default = 'true'
+* `demoTop` - In demo mode limit the objects requested to this amount.  Default = 1000
+* `hostPort` - Default = 80
+* `loggingLevel` - Allows values `1-3` with 3 being the highest logging. Default = 3
+* `method` - Allows values `http` or `immediate`.  "immediate" will execute once immediatly when the service is launched, then exit once complete.  "html" will launch an http listener and announce its IP and port.  Sending a GET request to this IP and port will trigger the cleanup to begin.  A response will be sent to the browser once complete, but detail logs will only be viewable from the service's console.  Default = "immediate"
 * `url` - The url of the API with PII data to be cleaned.  This API is of a known format, requiring slight modifications to this code if cleaning a different API type.  This argument is required and without a default value.
 
 Since `apiKey`, and `url` are both required and have no default values, if launching this service without passing these arguments or without them in the environment, the service will exit with an appropriate error message.  Here is an example of how to call using arguments rather than depending on environment variables:
