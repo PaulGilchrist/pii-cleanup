@@ -1,0 +1,25 @@
+{
+  "name": "pii-cleanup",
+  "version": "1.0.0",
+  "description": "Dababase cleanup routine to replace PII data with fake data",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http/github/PaulGilchrist"
+  },
+  "keywords": [
+    "pii",
+    "fake"
+  ],
+  "author": "Paul Gilchrist",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "chalk": "^4.0.0",
+    "faker": "^4.1.0",
+    "minimist": "^1.2.5"
+  }
+}
