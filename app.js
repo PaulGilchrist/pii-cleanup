@@ -82,8 +82,9 @@ const httpServer = http.createServer((req, res) => {
             replaceContacts(apiConfig);
             replaceVendors(apiConfig);
         } else if(sqlRequirementsMet) {
+            console.log(`SQL = ${chalk.blueBright(`${sqlConfig.server}/${sqlConfig.database}`)}`)
             replaceContactsSql(sqlConfig);
-            replaceVendorsSql(apiConfig);
+            replaceVendorsSql(sqlConfig);
         }
         res.statusCode = 202;
         res.setHeader('Content-Type', 'text/plain');
@@ -102,7 +103,8 @@ if(method=='http') {
         replaceContacts(apiConfig);
         replaceVendors(apiConfig);
     } else if(sqlRequirementsMet) {
+        console.log(`SQL = ${chalk.blueBright(`${sqlConfig.server}/${sqlConfig.database}`)}`)
         replaceContactsSql(sqlConfig);
-        replaceVendorsSql(apiConfig);
+        replaceVendorsSql(sqlConfig);
     }
 }

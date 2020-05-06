@@ -28,8 +28,8 @@ const replaceContacts = (config) => {
             config.query += `&$top=${config.demoTop}`;
         }
     }
-    // GET one or more contacts from EDH including all their addresses, emails, and phones
-    console.log(`GET = ${chalk.blueBright(config.query)}`)
+    // GET one or more contacts from API including all their addresses, emails, and phones
+    console.log(`GET: ${chalk.blueBright(config.query)}`)
     axios.get(config.query, {
         headers: {
             'Authorization': `basic ${config.apiKey}`
