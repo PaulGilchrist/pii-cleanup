@@ -10,12 +10,13 @@ const patch = require('./patch.js');
 const replaceVendors = (config) => {
     const defaultConfig = {
         apiKey: null, // Required but with no default
-        apiThrottleRate: 500, // Rate at which to delay between requests in milliseconds
-        query: null, // Not required
         demo: "true", // "true" or "false"
         demoTop: 100, // In demo mode limit the objects requested to this amount
         handleError: null, // Callback function should an error occur.  Not required
         loggingLevel: 3, //1-3 with 3 being most verbose logging
+        maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+        query: null, // Not required
+        retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
         url: null // Required but with no default
     }
     config = { ...defaultConfig, ...config };
@@ -63,8 +64,16 @@ const replaceVendors = (config) => {
             }
         });
         // Call patch and not patchBulk functions only when the API does not support bulk PATCH
-        if(config.demo == "false") {
-            patch.vendors(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedVendors);
+        if(config.demo == "false") {            
+            patch.vendors({
+                apiKey: config.apiKey,
+                handleError: config.handleError,
+                maxRetries: config.maxRetries,
+                retryCount: 0,
+                retryInitialDelay: config.retryInitialDelay,
+                updatedVendors,
+                url: config.url
+            });
         }
         // If there are more vendors, recurse down and get them
         if(urlRes.data['@odata.nextLink']) {

@@ -12,14 +12,15 @@ console.clear();
 var hostname = os.hostname();
 
 // Get arguments or environment variables
-const apiKey = args['apiKey'] || process.env.apiKey;
-const apiThrottleRate = args['apiThrottleRate'] || process.env.apiThrottleRate || 500; // Rate at which to delay between requests in milliseconds
+const apiKey = args['apiKey'] || process.env.apiKey; // Required but with no default
+const retryInitialDelay = args['retryInitialDelay'] || process.env.retryInitialDelay || 1000; // Rate at which to delay between requests in milliseconds
 const demo = args['demo'] || process.env.demo || "true"; // "true" (default), "false"
 const demoTop = args['demoTop'] || process.env.demoTop || (demo=="true" ? 100 : null); // In demo mode limit the objects requested to this amount
 const hostPort = args['hostPort'] || process.env.hostPort || 80;
 const loggingLevel = args['loggingLevel'] || process.env.loggingLevel || 3;
+const maxRetries = args['maxRetries'] || process.env.maxRetries || 3;
 const method =  args['method'] || process.env.method || "immediate"; // "http" or "immediate" (default)
-const url = args['url'] || process.env.url;
+const url = args['url'] || process.env.url; // Required but with no default
 // Check to ensure the required arguments without default values are passed in
 if (!url || !apiKey) {
     if (!url) {
@@ -39,7 +40,17 @@ const handleError = (error) => {
     }
 }
 
-const config = { url, apiKey, apiThrottleRate, demo, demoTop, handleError, loggingLevel };
+const config = {
+        apiKey,
+        demo,
+        demoTop,
+        handleError,
+        loggingLevel,
+        maxRetries,
+        query: null, // Not required but will use in future to update a single object or use custom filter
+        retryInitialDelay,
+        url
+    };
 
 const server = http.createServer((req, res) => {
     if (req.url != '/favicon.ico') {

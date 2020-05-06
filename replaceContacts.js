@@ -10,12 +10,13 @@ const patch = require('./patch.js');
 const replaceContacts = (config) => {
     const defaultConfig = {
         apiKey: null, // Required but with no default
-        apiThrottleRate: 500, // Rate at which to delay between requests in milliseconds
-        query: null, // Not required
         demo: "true", // "true" or "false"
         demoTop: 100, // In demo mode limit the objects requested to this amount
         handleError: null, // Callback function should an error occur.  Not required
         loggingLevel: 3, //1-3 with 3 being most verbose logging
+        maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+        query: null, // Not required
+        retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
         url: null // Required but with no default
     }
     config = { ...defaultConfig, ...config };
@@ -107,10 +108,42 @@ const replaceContacts = (config) => {
         });
         // Call patch and not patchBulk functions only when the API does not support bulk PATCH
         if(config.demo == "false") {
-            patch.addresses(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedAddresses);
-            patch.contacts(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedContacts);
-            patch.emails(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedEmails);
-            patch.phones(config.url, config.apiKey, config.apiThrottleRate, config.handleError, updatedPhones);
+            patch.addresses({
+                apiKey: config.apiKey,
+                handleError: config.handleError,
+                maxRetries: config.maxRetries,
+                retryCount: 0,
+                retryInitialDelay: config.retryInitialDelay,
+                updatedAddresses,
+                url: config.url
+            });
+            patch.contacts({
+                apiKey: config.apiKey,
+                handleError: config.handleError,
+                maxRetries: config.maxRetries,
+                retryCount: 0,
+                retryInitialDelay: config.retryInitialDelay,
+                updatedContacts,
+                url: config.url
+            });
+            patch.emails({
+                apiKey: config.apiKey,
+                handleError: config.handleError,
+                maxRetries: config.maxRetries,
+                retryCount: 0,
+                retryInitialDelay: config.retryInitialDelay,
+                updatedEmails,
+                url: config.url
+            });
+            patch.phones({
+                apiKey: config.apiKey,
+                handleError: config.handleError,
+                maxRetries: config.maxRetries,
+                retryCount: 0,
+                retryInitialDelay: config.retryInitialDelay,
+                updatedPhones,
+                url: config.url
+            });
         }
         // If there are more contacts, recurse down and get them
         if(urlRes.data['@odata.nextLink']) {

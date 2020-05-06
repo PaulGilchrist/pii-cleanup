@@ -2,230 +2,436 @@
 
 const axios = require('axios')
 const https = require('https');
+const utils = require('./utils.js');
 
 const patch = {
-    addresses: (url, apiKey, apiThrottleRate, handleError, updatedAddresses) => {
+    addresses: (config) => {
         // Only use this function if the API does not support bulk PATCH
-        updatedAddresses.forEach(updatedAddress => {
-            //Don't overrun throttling
-            setTimeout(() => {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedAddresses: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        let promissArray = [];
+        config.updatedAddresses.forEach(updatedAddress => {
+            promissArray.push(
                 axios.request({
                     data: updatedAddress,            
                     headers: {
-                        'Authorization': `basic ${apiKey}`
+                        'Authorization': `basic ${config.apiKey}`
                     },
                     httpsAgent: new https.Agent({
                         keepAlive: true,
                         rejectUnauthorized: false // (NOTE: this will disable client verification)
                     }),
                     method: 'patch',
-                    url: url + `/addresses(${updatedAddress.id})`
-                }).catch(error => {
-                    // If error 429 then retry after a slight delay
-                    handleError(error);
+                    url: config.url + `/addresses(${updatedAddress.id})`
+                })
+            );        
+        });
+        utils.seralizePromises(promissArray).then((results) => {
+            // results is an array of promise results in the same order
+            console.log(`PATCH of addresses completed successfully`);
+        }).catch(error => {
+            // If error 429 then retry after an increasing delay
+            if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                // Retry
+                utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                    addresses(config);
                 });
-            }, apiThrottleRate);
+            } else {
+                if(handleError != null) {
+                    config.handleError(error);
+                }
+            }
         });
     },
-    addressesBulk: (url, apiKey, handleError, updatedAddresses) => {
+    addressesBulk: (config) => {
         // Bulk support must be implemented in the API
-        if(updatedAddresses.length > 0) {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedAddresses: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        if(config.updatedAddresses.length > 0) {
             axios.request({
-                data: updatedAddresses,            
+                data: config.updatedAddresses,            
                 headers: {
-                    'Authorization': `basic ${apiKey}`
+                    'Authorization': `basic ${config.apiKey}`
                 },
                 httpsAgent: new https.Agent({
                     keepAlive: true,
                     rejectUnauthorized: false // (NOTE: this will disable client verification)
                 }),
                 method: 'patch',
-                url: url + '/addresses'
+                url: config.url + '/addresses'
             }).then(urlRes => {
                 console.log(`Bulk PATCH of addresses completed successfully`);
             }).catch(error => {
-                // If error 429 then retry after a slight delay
-                handleError(error);
+                if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                    // Retry
+                    utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                        addressesBulk(config);
+                    });
+                } else {
+                    if(handleError != null) {
+                        config.handleError(error);
+                    }
+                }
             });
         }
     },
-    contacts: (url, apiKey, apiThrottleRate, handleError, updatedContacts) => {
+    contacts: (config) => {
         // Only use this function if the API does not support bulk PATCH
-        updatedContacts.forEach(updatedContact => {
-            //Don't overrun throttling
-            setTimeout(() => {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedContacts: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        let promissArray = [];
+        config.updatedContacts.forEach(updatedContact => {
+            promissArray.push(
                 axios.request({
                     data: updatedContact,            
                     headers: {
-                        'Authorization': `basic ${apiKey}`
+                        'Authorization': `basic ${config.apiKey}`
                     },
                     httpsAgent: new https.Agent({
                         keepAlive: true,
                         rejectUnauthorized: false // (NOTE: this will disable client verification)
                     }),
                     method: 'patch',
-                    url: url + `/contacts(${updatedContact.id})`
-                }).catch(error => {
-                    // If error 429 then retry after a slight delay
-                    handleError(error);
+                    url: config.url + `/contacts(${updatedContact.id})`
+                })
+            );
+        });
+        utils.seralizePromises(promissArray).then((results) => {
+            // results is an array of promise results in the same order
+            console.log(`PATCH of contacts completed successfully`);
+        }).catch(error => {
+            // If error 429 then retry after an increasing delay
+            if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                // Retry
+                utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                    contacts(config);
                 });
-            }, apiThrottleRate);
+            } else {
+                if(handleError != null) {
+                    config.handleError(error);
+                }
+            }
         });
     },
-    contactsBulk: (url, apiKey, handleError, updatedContacts) => {
+    contactsBulk: (config) => {
         // Bulk support must be implemented in the API
-        if(updatedContacts.length > 0) {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedContacts: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        if(config.updatedContacts.length > 0) {
             axios.request({
-                data: updatedContacts,            
+                data: config.updatedContacts,            
                 headers: {
-                    'Authorization': `basic ${apiKey}`
+                    'Authorization': `basic ${config.apiKey}`
                 },
                 httpsAgent: new https.Agent({
                     keepAlive: true,
                     rejectUnauthorized: false // (NOTE: this will disable client verification)
                 }),
                 method: 'patch',
-                url: url + '/contacts'
+                url: config.url + '/contacts'
             }).then(urlRes => {
                 console.log(`Bulk PATCH of contacts completed successfully`);
             }).catch(error => {
-                // If error 429 then retry after a slight delay
-                handleError(error);
+                if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                    // Retry
+                    utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                        contactsBulk(config);
+                    });
+                } else {
+                    if(handleError != null) {
+                        config.handleError(error);
+                    }
+                }
             });
         }
     },
-    emails: (url, apiKey, apiThrottleRate, handleError, updatedEmails) => {
+    emails: (config) => {
         // Only use this function if the API does not support bulk PATCH
-        updatedEmails.forEach(updatedEmail => {
-            //Don't overrun throttling
-            setTimeout(() => {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedEmails: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        let promissArray = [];
+        config.updatedEmails.forEach(updatedEmail => {
+            promissArray.push(
                 axios.request({
                     data: updatedEmail,            
                     headers: {
-                        'Authorization': `basic ${apiKey}`
+                        'Authorization': `basic ${config.apiKey}`
                     },
                     httpsAgent: new https.Agent({
                         keepAlive: true,
                         rejectUnauthorized: false // (NOTE: this will disable client verification)
                     }),
                     method: 'patch',
-                    url: url + `/emails(${updatedEmail.id})`
-                }).catch(error => {
-                    // If error 429 then retry after a slight delay
-                    handleError(error);
+                    url: config.url + `/emails(${updatedEmail.id})`
+                })
+            );
+        });
+        utils.seralizePromises(promissArray).then((results) => {
+            // results is an array of promise results in the same order
+            console.log(`PATCH of emails completed successfully`);
+        }).catch(error => {
+            // If error 429 then retry after an increasing delay
+            if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                // Retry
+                utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                    emails(config);
                 });
-            }, apiThrottleRate);
+            } else {
+                if(handleError != null) {
+                    config.handleError(error);
+                }
+            }
         });
     },
-    emailsBulk: (url, apiKey, handleError, updatedEmails) => {
+    emailsBulk: (config) => {
         // Bulk support must be implemented in the API
-        if(updatedEmails.length > 0) {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedEmails: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        if(config.updatedEmails.length > 0) {
             axios.request({
-                data: updatedEmails,            
+                data: config.updatedEmails,            
                 headers: {
-                    'Authorization': `basic ${apiKey}`
+                    'Authorization': `basic ${config.apiKey}`
                 },
                 httpsAgent: new https.Agent({
                     keepAlive: true,
                     rejectUnauthorized: false // (NOTE: this will disable client verification)
                 }),
                 method: 'patch',
-                url: url + '/emails'
+                url: config.url + '/emails'
             }).then(urlRes => {
                 console.log(`Bulk PATCH of emails completed successfully`);
             }).catch(error => {
-                // If error 429 then retry after a slight delay
-                handleError(error);
+                if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                    // Retry
+                    utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                        emailsBulk(config);
+                    });
+                } else {
+                    if(handleError != null) {
+                        config.handleError(error);
+                    }
+                }
             });
         }
     },
-    phones: (url, apiKey, apiThrottleRate, handleError, updatedPhones) => {
+    phones: (config) => {
         // Only use this function if the API does not support bulk PATCH
-        updatedPhones.forEach(updatedPhone => {
-            //Don't overrun throttling
-            setTimeout(() => {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedPhones: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        let promissArray = [];
+        config.updatedPhones.forEach(updatedPhone => {
+            promissArray.push(
                 axios.request({
                     data: updatedPhone,            
                     headers: {
-                        'Authorization': `basic ${apiKey}`
+                        'Authorization': `basic ${config.apiKey}`
                     },
                     httpsAgent: new https.Agent({
                         keepAlive: true,
                         rejectUnauthorized: false // (NOTE: this will disable client verification)
                     }),
                     method: 'patch',
-                    url: url + `/phones(${updatedPhone.id})`
-                }).catch(error => {
-                    // If error 429 then retry after a slight delay
-                    handleError(error);
+                    url: config.url + `/phones(${updatedPhone.id})`
+                })
+            );
+        });
+        utils.seralizePromises(promissArray).then((results) => {
+            // results is an array of promise results in the same order
+            console.log(`PATCH of phones completed successfully`);
+        }).catch(error => {
+            // If error 429 then retry after an increasing delay
+            if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                // Retry
+                utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                    phones(config);
                 });
-            }, apiThrottleRate);
+            } else {
+                if(handleError != null) {
+                    config.handleError(error);
+                }
+            }
         });
     },
-    phonesBulk: (url, apiKey, handleError, updatedPhones) => {
+    phonesBulk: (config) => {
         // Bulk support must be implemented in the API
-        if(updatedPhones.length > 0) {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedPhones: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        if(config.updatedPhones.length > 0) {
             axios.request({
-                data: updatedPhones,            
+                data: config.updatedPhones,            
                 headers: {
-                    'Authorization': `basic ${apiKey}`
+                    'Authorization': `basic ${config.apiKey}`
                 },
                 httpsAgent: new https.Agent({
                     keepAlive: true,
                     rejectUnauthorized: false // (NOTE: this will disable client verification)
                 }),
                 method: 'patch',
-                url: url + '/phones'
+                url: config.url + '/phones'
             }).then(urlRes => {
                 console.log(`Bulk PATCH of phones completed successfully`);
             }).catch(error => {
-                // If error 429 then retry after a slight delay
-                handleError(error);
+                if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                    // Retry
+                    utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                        phonesBulk(config);
+                    });
+                } else {
+                    if(handleError != null) {
+                        config.handleError(error);
+                    }
+                }
             });
         }
     },
-    vendors: (url, apiKey, apiThrottleRate, handleError, updatedVendors) => {
+    vendors: (config) => {
         // Only use this function if the API does not support bulk PATCH
-        updatedVendors.forEach(updatedVendor => {
-            //Don't overrun throttling
-            setTimeout(() => {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedVendors: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        let promissArray = [];
+        config.updatedVendors.forEach(updatedVendor => {
+            promissArray.push(
                 axios.request({
                     data: updatedVendor,            
                     headers: {
-                        'Authorization': `basic ${apiKey}`
+                        'Authorization': `basic ${config.apiKey}`
                     },
                     httpsAgent: new https.Agent({
                         keepAlive: true,
                         rejectUnauthorized: false // (NOTE: this will disable client verification)
                     }),
                     method: 'patch',
-                    url: url + `/financialVendors(${updatedVendor.id})`
-                }).catch(error => {
-                    // If error 429 then retry after a slight delay
-                    handleError(error);
+                    url: config.url + `/financialVendors(${updatedVendor.id})`
+                })
+            );
+        });
+        utils.seralizePromises(promissArray).then((results) => {
+            // results is an array of promise results in the same order
+            console.log(`PATCH of vendors completed successfully`);
+        }).catch(error => {
+            // If error 429 then retry after an increasing delay
+            if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                // Retry
+                utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                    vendors(config);
                 });
-            }, apiThrottleRate);
+            } else {
+                if(handleError != null) {
+                    config.handleError(error);
+                }
+            }
         });
     },
-    vendorsBulk: (url, apiKey, handleError, updatedVendors) => {
+    vendorsBulk: (config) => {
         // Bulk support must be implemented in the API
-        if(updatedVendors.length > 0) {
+        const defaultConfig = {
+            apiKey: null, // Required but with no default
+            handleError: null, // Callback function should an error occur.  Not required
+            maxRetries: 3, // Max number of times to retry should a 429 (too many requests) error occur
+            retryCount: 0, // Current retry attempt
+            retryInitialDelay: 1000, // Rate at which to delay between retries in milliseconds
+            updatedVendors: [], // Required but with no default
+            url: null, // Required but with no default
+        };
+        config = { ...defaultConfig, ...config };
+        if(config.updatedVendors.length > 0) {
             axios.request({
-                data: updatedVendors,            
+                data: config.updatedVendors,            
                 headers: {
-                    'Authorization': `basic ${apiKey}`
+                    'Authorization': `basic ${config.apiKey}`
                 },
                 httpsAgent: new https.Agent({
                     keepAlive: true,
                     rejectUnauthorized: false // (NOTE: this will disable client verification)
                 }),
                 method: 'patch',
-                url: url + '/financialVendors'
+                url: config.url + '/financialVendors'
             }).then(urlRes => {
                 console.log(`Bulk PATCH of vendors completed successfully`);
             }).catch(error => {
-                // If error 429 then retry after a slight delay
-                handleError(error);
+                if(error.response.status == 429 && config.retryCount++ >= config.maxRetries) {
+                    // Retry
+                    utils.wait(config.retryInitialDelay*(config.retryCount^2)).then(() => {
+                        vendorsBulk(config);
+                    });
+                } else {
+                    if(handleError != null) {
+                        config.handleError(error);
+                    }
+                }
             });
         }
     }
