@@ -7,6 +7,7 @@ const os = require("os");
 const replaceContacts = require('./replaceContacts.js');
 const replaceContactsSql = require('./replaceContactsSql.js');
 const replaceVendors = require('./replaceVendors.js');
+const replaceVendorsSql = require('./replaceVendorsSql.js');
 
 console.clear();
 
@@ -80,6 +81,9 @@ const httpServer = http.createServer((req, res) => {
         if(apiRequirementsMet) {
             replaceContacts(apiConfig);
             replaceVendors(apiConfig);
+        } else if(sqlRequirementsMet) {
+            replaceContactsSql(sqlConfig);
+            replaceVendorsSql(apiConfig);
         }
         res.statusCode = 202;
         res.setHeader('Content-Type', 'text/plain');
@@ -87,21 +91,18 @@ const httpServer = http.createServer((req, res) => {
     }
 });
 
-switch(method) {
-    case "http": {
-        httpServer.listen(hostPort, hostname, () => {
-            console.log(`Server running at ${chalk.blueBright(`http://${hostname}:${hostPort}/`)}`);
-        });
-        break;
-    }
-    default: {
-        if(apiRequirementsMet) {
-            replaceContacts(apiConfig);
-            replaceVendors(apiConfig);
-        }
-        if(sqlRequirementsMet) {
-            replaceContactsSql(sqlConfig);
-            //replaceVendorsSql(apiConfig);
-        }
+if(method=='http') {
+    // HTTP triggered
+    httpServer.listen(hostPort, hostname, () => {
+        console.log(`Server running at ${chalk.blueBright(`http://${hostname}:${hostPort}/`)}`);
+    });
+} else {
+    // Immediate
+    if(apiRequirementsMet) {
+        replaceContacts(apiConfig);
+        replaceVendors(apiConfig);
+    } else if(sqlRequirementsMet) {
+        replaceContactsSql(sqlConfig);
+        replaceVendorsSql(apiConfig);
     }
 }

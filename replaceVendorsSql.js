@@ -5,7 +5,7 @@ const chalk = require('chalk'); // Add color to the console
 const faker = require('faker/locale/en_US');
 const sql = require('mssql');
 
-const replaceContactsSql = (config) => {
+const replaceVendorsSql = (config) => {
     const defaultConfig = {
         database: null, // Required but with no default
         demo: "true", // "true" or "false"
@@ -31,105 +31,38 @@ const replaceContactsSql = (config) => {
         }
     };
     sql.connect(dbConfig).then(() => {
-        // Get Addresses
-        sql.query(`select ${`top ${config.demoTop}`} AddressId from shr.Address`).then(result => {
-            // Loop through each address replacing it's PII properties with fake data
+        // Get Financial Vendors
+        sql.query(`select ${`top ${config.demoTop}`} FinancialVendorId,TaxId from purch.FinancialVendor`).then(result => {
+            const  ssnPattern = /^[0-9]{3}\-?[0-9]{2}\-?[0-9]{4}$/;
+            // Loop through each FinancialVendor replacing it's PII properties with fake data
             let updateQuery = '';
-            result.recordset.forEach(address => {
-                updateQuery += `update shr.Address set Address1='${faker.address.streetAddress()}', Address2=null, City: '${faker.address.city()}', StateProvince='${faker.address.stateAbbr()}', PostalCode='${faker.address.zipCode()}', County='${faker.address.county()}', Country='USA' where AddressId=${address.AddressId}\n`
-            });
-            if(config.loggingLevel > 2) {
-                console.log(chalk.greenBright(`Replacing addresses`));
-                console.log(updateQuery);
-            }
-            // Update Addresses (incomplete - need to replace '' with updateQuery)
-            sql.query('').then(result => {
-                console.log(chalk.greenBright(`Addresses update successful`));
-            }).catch(err => {
-                console.error(`Address update error`);
-                console.error(err);
-            })
-        }).catch(err => {
-            console.error(`Address query error`);
-            console.error(err);
-        })
-        // Replace Contacts
-        sql.query(`select ${`top ${config.demoTop}`} ContactId from shr.Contact`).then(result => {
-            // Loop through each contact replacing it's PII properties with fake data
-            let updateQuery = '';
-            result.recordset.forEach(contact => {
-                const firstName = faker.name.firstName();
-                const lastName = faker.name.lastName();
-                updateQuery += `update shr.Contact set FirstName='${firstName}', LastName='${lastName}', DisplayName='${lastName}, ${firstName}' where ContactId=${contact.ContactId}\n`
-            });
-            if(config.loggingLevel > 2) {
-                console.log(chalk.greenBright(`Replacing contacts`));
-                console.log(updateQuery);
-            }
-            // Update Contacts (incomplete - need to replace '' with updateQuery)
-            sql.query('').then(result => {
-                console.log(chalk.greenBright(`Contact update successful`));
-                // Replace Emails - Must be done after successful update of contact name, since email address uses the name
-                sql.query(`select ${`top ${config.demoTop}`} c.FirstName, c.LastName, e.EmailId from shr.ContactEmailAssoc cea inner join shr.Contact c on c.ContactId=cea.ContactId inner join shr.Email e on e.EmailId=cea.EmailId`).then(result => {
-                    // Loop through each email replacing it's PII properties with fake data
-                    let updateQuery = '';
-                    result.recordset.forEach(email => {
-                        const firstName = faker.name.firstName();
-                        const lastName = faker.name.lastName();
-                        updateQuery += `update shr.Email set EmailAddress='${faker.internet.email(email.FirstName, email.LastName)}' where EmailId=${email.EmailId}\n`
-                    });
-                    if(config.loggingLevel > 2) {
-                        console.log(chalk.greenBright(`Replacing emails`));
-                        console.log(updateQuery);
+            result.recordset.forEach(financialVendor => {
+                // RegEx for SSN
+                if(ssnPattern.test(financialVendor.TaxId)) {
+                    let taxId = '';
+                    for(let i = 0; i < 11; i++) {
+                        if(i==3 || i==6) {
+                            taxId += `-`;
+                        } else {
+                            taxId += Math.floor(Math.random() * 9 + 1).toString(); // Not using 0
+                        }
                     }
-                    // Update Emails (incomplete - need to replace '' with updateQuery)
-                    sql.query('').then(result => {
-                        console.log(chalk.greenBright(`Email update successful`));
-                    }).catch(err => {
-                        console.error(`Email update error`);
-                        console.error(err);
-                    })
-                }).catch(err => {
-                    console.error(`Email query error`);
-                    console.error(err);
-                })
-            }).catch(err => {
-                console.error(`Contact update error`);
-                console.error(err);
-            })
-        }).catch(err => {
-            console.error(`Contact query error`);
-            console.error(err);
-        })
-        // Replace Phones
-        sql.query(`select ${`top ${config.demoTop}`} PhoneId from shr.Phone`).then(result => {
-            // Loop through each phone replacing it's PII properties with fake data
-            let updateQuery = '';
-            result.recordset.forEach(phone => {
-                let phoneNumber = '';
-                for(let i = 0; i < 10; i++) {
-                    if(i==0 || i==3) {
-                        // First area code digit, and first local digit cannot be 0 or 1
-                        phoneNumber += Math.floor(Math.random() * 8 + 2).toString();
-                    } else {
-                        phoneNumber += Math.floor(Math.random() * 10).toString();
-                    }
+                    updateQuery += `update purch.FinancialVendor set TaxId='${taxId}' where FinancialVendorId=${financialVendor.FinancialVendorId}\n`
                 }
-                updateQuery += `update shr.Phone set PhoneNumber='${phoneNumber}' where PhoneId=${phone.PhoneId}\n`
             });
             if(config.loggingLevel > 2) {
-                console.log(chalk.greenBright(`Replacing phones`));
+                console.log(chalk.greenBright(`Replacing vendors`));
                 console.log(updateQuery);
             }
-            // Update Phone (incomplete - need to replace '' with updateQuery)
+            // Update Vendor (incomplete - need to replace '' with updateQuery)
             sql.query('').then(result => {
-                console.log(chalk.greenBright(`Phone update successful`));
+                console.log(chalk.greenBright(`Vendor update successful`));
             }).catch(err => {
-                console.error(`Phone update error`);
+                console.error(`Vendor update error`);
                 console.error(err);
             })
         }).catch(err => {
-            console.error(`Phone query error`);
+            console.error(`Vendor query error`);
             console.error(err);
         })
     }).catch((err) => {
@@ -138,4 +71,4 @@ const replaceContactsSql = (config) => {
     });
 }
 
-module.exports = replaceContactsSql;
+module.exports = replaceVendorsSql;

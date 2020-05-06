@@ -28,7 +28,6 @@ const replaceVendors = (config) => {
             config.query += `&$top=${config.demoTop}`;
         }
     }
-    const  ssnPattern = /^[0-9]{3}\-?[0-9]{2}\-?[0-9]{4}$/;
     // GET one or more contacts from EDH including all their addresses, emails, and phones
     console.log(`GET = ${chalk.blueBright(config.query)}`)
     axios.get(config.query, {
@@ -42,6 +41,7 @@ const replaceVendors = (config) => {
     }).then(urlRes => {
         const originalVendors = urlRes.data.value;
         let updatedVendors = [];
+        const  ssnPattern = /^[0-9]{3}\-?[0-9]{2}\-?[0-9]{4}$/;
         // Loop through each vendor determining if they are using a SSN as their taxId, and replacing it with fake data
         originalVendors.forEach(originalVendor => {
             // RegEx for SSN
