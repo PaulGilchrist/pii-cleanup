@@ -39,13 +39,13 @@ node app.js
 ### API mode - Demo only
 
 ```cmd
-node app.js --url=https://api.domain.com/odata --apiKey=387dbb3c-6f37-48fa-aaa3-c14f23d33bd2
+node app.js --url=https://api.domain.com/odata --apiKey=myBasicAuthKey
 ```
 
 ### API mode - Modify 2 contacts and 2 vendors
 
 ```cmd
-node app.js --url=https://api.domain.com/odata --apiKey=387dbb3c-6f37-48fa-aaa3-c14f23d33bd2 --demoTop=2 --demo=false
+node app.js --url=https://api.domain.com/odata --apiKey=myBasicAuthKey --demoTop=2 --demo=false
 ```
 
 ### SQL mode - Demo only
