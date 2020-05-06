@@ -5,31 +5,41 @@ const chalk = require('chalk'); // Add color to the console
 const http = require('http');
 const os = require("os");
 const replaceContacts = require('./replaceContacts.js');
+const replaceContactsSql = require('./replaceContactsSql.js');
 const replaceVendors = require('./replaceVendors.js');
 
 console.clear();
 
 var hostname = os.hostname();
 
-// Get arguments or environment variables
-const apiKey = args['apiKey'] || process.env.apiKey; // Required but with no default
-const retryInitialDelay = args['retryInitialDelay'] || process.env.retryInitialDelay || 1000; // Rate at which to delay between requests in milliseconds
-const demo = args['demo'] || process.env.demo || "true"; // "true" (default), "false"
-const demoTop = args['demoTop'] || process.env.demoTop || (demo=="true" ? 100 : null); // In demo mode limit the objects requested to this amount
+// Required arguments or environment variables when using remote API calls
+const apiKey = args['apiKey'] || process.env.apiKey;
+const url = args['url'] || process.env.url;
+
+// Required arguments or environment variables when using remote SQL database queries
+const database = args['database'] || process.env.database;
+const password = args['password'] || process.env.password;
+const server = args['server'] || process.env.server;
+const user = args['user'] || process.env.user;
+
+// Optional arguments or environment variables
+const demo = args['demo'] || process.env.demo || "true"; // "true" or "false"
+const demoTop = args['demoTop'] || process.env.demoTop || (demo=="true" ? 100 : null); // In demo mode limit the objects requested to this amount.
 const hostPort = args['hostPort'] || process.env.hostPort || 80;
 const loggingLevel = args['loggingLevel'] || process.env.loggingLevel || 3;
 const maxRetries = args['maxRetries'] || process.env.maxRetries || 3;
-const method =  args['method'] || process.env.method || "immediate"; // "http" or "immediate" (default)
-const url = args['url'] || process.env.url; // Required but with no default
+const method =  args['method'] || process.env.method || "immediate"; // "http" or "immediate"
+const retryInitialDelay = args['retryInitialDelay'] || process.env.retryInitialDelay || 1000; // Rate at which to delay between requests in milliseconds
+
 // Check to ensure the required arguments without default values are passed in
-if (!url || !apiKey) {
-    if (!url) {
-        console.warn(`url needs to be passed in as an argument or environment variable`)
-    }
-    if (!apiKey) {
-        console.warn(`apiKey needs to be passed in as an argument or environment variable`)
-    }
-    // We do not have the required minimum infomraiton to continue
+const apiRequirementsMet = (apiKey && url);
+const sqlRequirementsMet = (database && password && server && user);
+
+if(!apiRequirementsMet && !sqlRequirementsMet) {
+    console.warn(`Required arguments or environment variables missing`)
+    console.warn(`If using API calls then 'apiKey' and 'url' must be supplied`)
+    console.warn(`If using SQL queries then 'database', 'password', 'server', and 'user' must be supplied`)
+    // We do not have the required minimum informaiton to continue
     process.exit(1);
 }
 
@@ -40,22 +50,37 @@ const handleError = (error) => {
     }
 }
 
-const config = {
-        apiKey,
-        demo,
-        demoTop,
-        handleError,
-        loggingLevel,
-        maxRetries,
-        query: null, // Not required but will use in future to update a single object or use custom filter
-        retryInitialDelay,
-        url
-    };
+const apiConfig = {
+    apiKey,
+    demo,
+    demoTop,
+    handleError,
+    loggingLevel,
+    maxRetries,
+    query: null, // Not required but will use in future to update a single object or use custom filter
+    retryInitialDelay,
+    url
+};
 
-const server = http.createServer((req, res) => {
+const sqlConfig = {
+    database,
+    demo,
+    demoTop,
+    handleError,
+    loggingLevel,
+    maxRetries,
+    password,
+    retryInitialDelay,
+    server,
+    user
+};
+
+const httpServer = http.createServer((req, res) => {
     if (req.url != '/favicon.ico') {
-        replaceContacts(config);
-        replaceVendors(config);
+        if(apiRequirementsMet) {
+            replaceContacts(apiConfig);
+            replaceVendors(apiConfig);
+        }
         res.statusCode = 202;
         res.setHeader('Content-Type', 'text/plain');
         res.end(`PII cleanup request accepted`);
@@ -64,13 +89,19 @@ const server = http.createServer((req, res) => {
 
 switch(method) {
     case "http": {
-        server.listen(hostPort, hostname, () => {
+        httpServer.listen(hostPort, hostname, () => {
             console.log(`Server running at ${chalk.blueBright(`http://${hostname}:${hostPort}/`)}`);
         });
         break;
     }
     default: {
-        replaceContacts(config);
-        replaceVendors(config);
+        if(apiRequirementsMet) {
+            replaceContacts(apiConfig);
+            replaceVendors(apiConfig);
+        }
+        if(sqlRequirementsMet) {
+            replaceContactsSql(sqlConfig);
+            //replaceVendorsSql(apiConfig);
+        }
     }
 }

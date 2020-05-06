@@ -62,7 +62,7 @@ const replaceContacts = (config) => {
             originalContact.addressAssocs.forEach(addressAssoc => {
                 let updatedAddress = {
                     id: addressAssoc.addressId,
-                    address1: faker.name.streetAddress(),
+                    address1: faker.address.streetAddress(),
                     address2: null,
                     city: faker.address.city(),
                     stateProvince: faker.address.stateAbbr(),
