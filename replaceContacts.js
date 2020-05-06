@@ -149,8 +149,6 @@ const replaceContacts = (config) => {
         if(urlRes.data['@odata.nextLink']) {
             config.query = urlRes.data['@odata.nextLink'];
             replaceContacts(config);
-        } else {
-            console.log(`Contacts updated successfully`);
         }
     }).catch(error => {
         config.handleError(error);

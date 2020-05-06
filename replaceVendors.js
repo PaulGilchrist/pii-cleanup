@@ -79,8 +79,6 @@ const replaceVendors = (config) => {
         if(urlRes.data['@odata.nextLink']) {
             config.query = urlRes.data['@odata.nextLink'];
             replaceVendors(config);
-        } else {
-            console.log(`Vendors updated successfully`);
         }
     }).catch(error => {
         config.handleError(error);
